@@ -170,7 +170,17 @@ body {
   font-size: 14px; padding: 48px 0;
 }
 
-/* ---- 备忘录 ---- */
+/* ---- 拖拽排序 ---- */
+.todo-item[draggable="true"],
+.memo-item[draggable="true"] { cursor: grab; }
+.todo-item.dragging,
+.memo-item.dragging { opacity: .45; }
+.todo-item.drag-over-top,
+.memo-item.drag-over-top { box-shadow: 0 -3px 0 0 var(--primary) inset; }
+.todo-item.drag-over-bottom,
+.memo-item.drag-over-bottom { box-shadow: 0 3px 0 0 var(--primary) inset; }
+
+/* ---- 备忘录：标题 + 内容文本区块 ---- */
 .memo-list { display: flex; flex-direction: column; gap: 10px; }
 .memo-item {
   background: var(--card);
@@ -179,8 +189,32 @@ body {
   padding: 14px 16px;
   display: flex; gap: 12px; align-items: flex-start;
 }
-.memo-content { flex: 1; font-size: 14px; white-space: pre-wrap; word-break: break-all; line-height: 1.7; }
-.memo-time { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
+.memo-item:hover { box-shadow: 0 4px 12px rgba(47, 111, 237, .08); }
+.memo-body { flex: 1; min-width: 0; }
+.memo-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; word-break: break-all; }
+.memo-content {
+  font-size: 14px; white-space: pre-wrap;
+  word-break: break-all; line-height: 1.7;
+}
+.memo-time { font-size: 12px; color: var(--text-sub); margin-top: 8px; }
+.memo-title-input {
+  width: 100%;
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 15px; font-weight: 600;
+  outline: none; margin-bottom: 8px; color: var(--text);
+}
+.memo-content-input {
+  width: 100%; min-height: 120px;
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 14px; line-height: 1.7;
+  resize: vertical; outline: none; color: var(--text);
+  font-family: inherit; white-space: pre-wrap;
+}
+.memo-title-input:focus,
+.memo-content-input:focus { border-color: var(--primary); }
+.memo-edit-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;
+}
 
 /* ---- 统计 ---- */
 .stats-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
