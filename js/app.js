@@ -409,10 +409,12 @@
   const MEMO_DRAFT_KEY = 'memo_draft';
 
   function saveMemoDraft() {
-    localStorage.setItem(MEMO_DRAFT_KEY, JSON.stringify({
-      title: $('memo-new-title').value,
-      content: $('memo-new-content').value,
-    }));
+    try {
+      localStorage.setItem(MEMO_DRAFT_KEY, JSON.stringify({
+        title: $('memo-new-title').value,
+        content: $('memo-new-content').value,
+      }));
+    } catch (e) { /* 存储不可用时忽略草稿 */ }
   }
 
   function loadMemoDraft() {
@@ -423,12 +425,12 @@
     $('memo-new-content').value = draft.content || '';
   }
 
-  // 读取顶部输入框内容保存为新备忘并清空输入框及草稿；内容为空则不保存
+  // 读取顶部输入框内容追加到备忘录列表末尾（重要的备忘保留在上方，新备忘排最后）并清空输入框及草稿；内容为空则不保存
   function saveNewMemo() {
     const title = $('memo-new-title').value.trim();
     const content = $('memo-new-content').value.trim();
     if (!content) return;
-    state.data.memos.unshift({ id: uid('m_'), title, content, createdAt: Date.now() });
+    state.data.memos.push({ id: uid('m_'), title, content, createdAt: Date.now() });
     $('memo-new-title').value = '';
     $('memo-new-content').value = '';
     localStorage.removeItem(MEMO_DRAFT_KEY);
