@@ -156,9 +156,8 @@ body {
   border-radius: 6px; line-height: 1.6;
 }
 .tag-group { background: #eef4ff; color: var(--primary); }
-.tag-high { background: #fbe9e9; color: var(--high); }
-.tag-medium { background: #fdf3e0; color: var(--warn); }
-.tag-low { background: #eef1f6; color: var(--low); }
+.tag-urgent { background: #fbe9e9; color: var(--danger); }
+.tag-normal { background: #eef4ff; color: var(--primary); }
 .tag-due { background: #fbe9e9; color: var(--danger); }
 .tag-soon { background: #fdf3e0; color: var(--warn); }
 .tag-time { background: #eef1f6; color: var(--text-sub); }
@@ -170,18 +169,18 @@ body {
   font-size: 14px; padding: 48px 0;
 }
 
-/* ---- 拖拽排序 ---- */
-.todo-item[draggable="true"],
-.memo-item[draggable="true"] { cursor: grab; }
-.todo-item.dragging,
-.memo-item.dragging { opacity: .45; }
-.todo-item.drag-over-top,
-.memo-item.drag-over-top { box-shadow: 0 -3px 0 0 var(--primary) inset; }
-.todo-item.drag-over-bottom,
-.memo-item.drag-over-bottom { box-shadow: 0 3px 0 0 var(--primary) inset; }
-
 /* ---- 备忘录：标题 + 内容文本区块 ---- */
 .memo-list { display: flex; flex-direction: column; gap: 10px; }
+.memo-compose {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.memo-compose-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;
+}
 .memo-item {
   background: var(--card);
   border: 1px solid var(--border);
@@ -204,7 +203,7 @@ body {
   outline: none; margin-bottom: 8px; color: var(--text);
 }
 .memo-content-input {
-  width: 100%; min-height: 120px;
+  width: 100%; min-height: 240px;
   border: 1px solid var(--border); border-radius: 8px;
   padding: 8px 12px; font-size: 14px; line-height: 1.7;
   resize: vertical; outline: none; color: var(--text);
@@ -212,9 +211,6 @@ body {
 }
 .memo-title-input:focus,
 .memo-content-input:focus { border-color: var(--primary); }
-.memo-edit-actions {
-  display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;
-}
 
 /* ---- 统计 ---- */
 .stats-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }

@@ -50,7 +50,13 @@
     <section id="view-memo" class="view">
       <div class="view-toolbar">
         <h2 class="view-title">备忘录</h2>
-        <button id="add-memo-btn" class="btn primary">+ 新增备忘</button>
+      </div>
+      <div class="memo-compose">
+        <input id="memo-new-title" class="memo-title-input" placeholder="备忘标题">
+        <textarea id="memo-new-content" class="memo-content-input" placeholder="备忘内容"></textarea>
+        <div class="memo-compose-actions">
+          <button id="memo-save-btn" class="btn primary">保存</button>
+        </div>
       </div>
       <div id="memo-list" class="memo-list"></div>
     </section>

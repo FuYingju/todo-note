@@ -12,8 +12,6 @@
     view: 'todo',
     groupFilter: 'all',
     trendChart: null,
-    editingMemoId: null,   // 当前处于编辑状态的备忘 id
-    pendingNewMemoId: null, // 新增但尚未保存落盘的备忘 id
   };
 
   // ---- DOM ----
@@ -41,8 +39,12 @@
   };
 
   // ---- 工具函数 ----
-  const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
-  const PRIORITY_TEXT = { high: '高', medium: '中', low: '低' };
+  // 优先级：普通(蓝)/紧急(红)；旧数据 high 视为紧急，medium/low 视为普通
+  const PRIORITY_ORDER = { urgent: 0, high: 0, normal: 1, medium: 1, low: 1 };
+  function priorityInfo(priority) {
+    if (priority === 'urgent' || priority === 'high') return { text: '紧急', cls: 'tag-urgent' };
+    return { text: '普通', cls: 'tag-normal' };
+  }
 
   function uid(prefix) {
     return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -110,9 +112,9 @@
     return `<span class="tag tag-time">${todo.dueDate} 截止</span>`;
   }
 
-  function todoItemHtml(todo, doneView, draggable) {
+  function todoItemHtml(todo, doneView) {
     const group = getGroup(todo.groupId);
-    const priorityCls = todo.priority ? `tag-${todo.priority}` : 'tag-low';
+    const pri = priorityInfo(todo.priority);
     const doneCls = doneView ? ' done-item' : '';
     const checkBtn = doneView
       ? '<button class="todo-check" title="恢复待办" data-act="restore">&#10003;</button>'
@@ -120,19 +122,21 @@
     const actions = doneView
       ? `<button class="btn small ghost" data-act="restore">恢复</button>
          <button class="btn small ghost danger" data-act="del">删除</button>`
-      : `<button class="btn small ghost" data-act="edit">编辑</button>
+      : `<button class="btn small ghost" data-act="up" title="上移">↑</button>
+         <button class="btn small ghost" data-act="down" title="下移">↓</button>
+         <button class="btn small ghost" data-act="edit">编辑</button>
          <button class="btn small ghost danger" data-act="del">删除</button>`;
     const doneTime = doneView && todo.doneAt ? `<span class="tag tag-time">完成于 ${fmtTime(todo.doneAt)}</span>` : '';
 
     return `
-      <div class="todo-item${doneCls}" data-id="${todo.id}"${draggable ? ' draggable="true"' : ''}>
+      <div class="todo-item${doneCls}" data-id="${todo.id}">
         ${checkBtn}
         <div class="todo-body">
           <div class="todo-title">${escapeHtml(todo.title)}</div>
           ${todo.note ? `<div class="todo-note">${escapeHtml(todo.note)}</div>` : ''}
           <div class="todo-meta">
             <span class="tag tag-group">${escapeHtml(group.name)}</span>
-            <span class="tag ${priorityCls}">${PRIORITY_TEXT[todo.priority] || '中'}优先级</span>
+            <span class="tag ${pri.cls}">${pri.text}</span>
             ${dueTagHtml(todo)}
             ${doneTime}
           </div>
@@ -159,7 +163,7 @@
       ? `今天还剩 <b>${list.length}</b> 件待办，加油！`
       : '当前没有待办事项，休息一下吧';
     el.todoList.innerHTML = list.length
-      ? list.map((t) => todoItemHtml(t, false, true)).join('')
+      ? list.map((t) => todoItemHtml(t, false)).join('')
       : '<div class="empty-tip">暂无待办，点击右上角"新建待办"开始记录</div>';
   }
 
@@ -171,40 +175,28 @@
       : '<div class="empty-tip">还没有完成的事项</div>';
   }
 
-  // 备忘条目：默认展示标题+内容区块；编辑中则切换为内联编辑表单（所见即所得，无弹窗）
+  // 备忘条目：只读文本区块（标题+内容），支持上移/下移/删除
   function memoItemHtml(memo) {
-    if (state.editingMemoId === memo.id) {
-      return `
-        <div class="memo-item editing" data-id="${memo.id}">
-          <div class="memo-body">
-            <input class="memo-title-input" value="${escapeHtml(memo.title)}" placeholder="备忘标题（可选）">
-            <textarea class="memo-content-input" placeholder="备忘内容，支持多行换行">${escapeHtml(memo.content)}</textarea>
-            <div class="memo-edit-actions">
-              <button class="btn small primary" data-act="save-memo">保存</button>
-              <button class="btn small ghost" data-act="cancel-memo">取消</button>
-            </div>
-          </div>
-        </div>`;
-    }
     return `
-      <div class="memo-item" data-id="${memo.id}" draggable="true">
+      <div class="memo-item" data-id="${memo.id}">
         <div class="memo-body">
           ${memo.title ? `<div class="memo-title">${escapeHtml(memo.title)}</div>` : ''}
           <div class="memo-content">${escapeHtml(memo.content)}</div>
           <div class="memo-time">记录于 ${fmtTime(memo.createdAt)}</div>
         </div>
         <div class="todo-actions">
-          <button class="btn small ghost" data-act="edit">编辑</button>
+          <button class="btn small ghost" data-act="up" title="上移">↑</button>
+          <button class="btn small ghost" data-act="down" title="下移">↓</button>
           <button class="btn small ghost danger" data-act="del">删除</button>
         </div>
       </div>`;
   }
 
-  // 备忘录按数组顺序渲染（拖拽排序后数组顺序即显示顺序）
+  // 备忘录按数组顺序渲染（排序由列表上的上移/下移按钮调整）
   function renderMemo() {
     el.memoList.innerHTML = state.data.memos.length
       ? state.data.memos.map(memoItemHtml).join('')
-      : '<div class="empty-tip">备忘录是空的，点击右上角"新增备忘"记录重要信息</div>';
+      : '<div class="empty-tip">备忘录是空的，在上方输入内容后点击保存即可记录</div>';
   }
 
   function renderStats() {
@@ -282,64 +274,14 @@
     if (state.view === 'stats') renderStats();
   }
 
-  // ---- 拖拽排序 ----
-  // 把 dragId 项移动到 targetId 项之前（before=true）或之后（before=false）
-  function reorder(list, dragId, targetId, before) {
-    const from = list.findIndex((x) => x.id === dragId);
-    if (from < 0) return;
-    const [item] = list.splice(from, 1);
-    let to = list.findIndex((x) => x.id === targetId);
-    if (to < 0) { list.splice(from, 0, item); return; }
-    if (!before) to += 1;
-    list.splice(to, 0, item);
-  }
-
-  // 为列表容器绑定原生拖拽排序；getList 返回待重排的数据数组，onChange 在落位后调用
-  function bindDragSort(listEl, getList, onChange) {
-    let dragId = null;
-    let target = null;
-
-    function clearDragUI() {
-      dragId = null;
-      target = null;
-      listEl.querySelectorAll('.dragging, .drag-over-top, .drag-over-bottom')
-        .forEach((n) => n.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom'));
-    }
-
-    listEl.addEventListener('dragstart', (e) => {
-      const item = e.target.closest('[draggable]');
-      if (!item) return;
-      dragId = item.dataset.id;
-      item.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      try { e.dataTransfer.setData('text/plain', dragId); } catch (err) {}
-    });
-
-    listEl.addEventListener('dragover', (e) => {
-      if (!dragId) return;
-      const item = e.target.closest('[draggable]');
-      if (!item || item.dataset.id === dragId) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const rect = item.getBoundingClientRect();
-      const before = (e.clientY - rect.top) < rect.height / 2;
-      if (target && target.id === item.dataset.id && target.before === before) return;
-      listEl.querySelectorAll('.drag-over-top, .drag-over-bottom')
-        .forEach((n) => n.classList.remove('drag-over-top', 'drag-over-bottom'));
-      item.classList.add(before ? 'drag-over-top' : 'drag-over-bottom');
-      target = { id: item.dataset.id, before };
-    });
-
-    listEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const item = e.target.closest('[draggable]');
-      if (!dragId || !item || item.dataset.id === dragId) { clearDragUI(); return; }
-      reorder(getList(), dragId, item.dataset.id, target ? target.before : true);
-      clearDragUI();
-      onChange();
-    });
-
-    listEl.addEventListener('dragend', clearDragUI);
+  // ---- 排序调整 ----
+  // 把 list 中 itemId 项向上（dir=-1）或向下（dir=1）移动一位，越界时不操作
+  function moveItem(list, itemId, dir) {
+    const i = list.findIndex((x) => x.id === itemId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const [item] = list.splice(i, 1);
+    list.splice(j, 0, item);
   }
 
   // ---- 弹窗 ----
@@ -373,15 +315,12 @@
        <div class="form-row">
          <div class="form-group"><label>优先级</label>
            <select id="f-priority">
-             <option value="high">高</option>
-             <option value="medium">中</option>
-             <option value="low">低</option>
+             <option value="normal">普通</option>
+             <option value="urgent">紧急</option>
            </select></div>
          <div class="form-group"><label>所属项目</label>
            <select id="f-group">${groupOptions}</select></div>
-       </div>
-       <div class="form-group"><label>截止日期（可选）</label>
-         <input id="f-due" type="date" value="${todo && todo.dueDate ? todo.dueDate : ''}"></div>`,
+       </div>`,
       '保存',
       () => {
         const title = $('f-title').value.trim();
@@ -391,7 +330,6 @@
           note: $('f-note').value.trim(),
           priority: $('f-priority').value,
           groupId: $('f-group').value,
-          dueDate: $('f-due').value || null,
         };
         if (isEdit) {
           Object.assign(todo, payload);
@@ -403,9 +341,9 @@
         save();
       }
     );
-    // 回填选中值
+    // 回填选中值；旧数据 high 视为紧急，medium/low 视为普通
     if (todo) {
-      $('f-priority').value = todo.priority || 'medium';
+      $('f-priority').value = (todo.priority === 'urgent' || todo.priority === 'high') ? 'urgent' : 'normal';
       $('f-group').value = todo.groupId || state.data.groups[0].id;
     }
   }
@@ -466,51 +404,17 @@
     });
   }
 
-  // ---- 备忘录（内联编辑，无弹窗） ----
-  // 新增备忘：在列表顶部插入编辑区块，保存后才落盘
-  function startMemoCreate() {
-    const memo = { id: uid('m_'), title: '', content: '', createdAt: Date.now() };
-    state.data.memos.unshift(memo);
-    state.editingMemoId = memo.id;
-    state.pendingNewMemoId = memo.id;
-    renderMemo();
-    el.memoList.querySelector('.memo-title-input').focus();
-  }
-
-  // 编辑备忘：切换为内联编辑表单，所见即所得
-  function startMemoEdit(memo) {
-    state.editingMemoId = memo.id;
-    renderMemo();
-    el.memoList.querySelector('.memo-title-input').focus();
-  }
-
-  // 保存当前编辑中的备忘；内容为空则不退出编辑
-  function saveEditingMemo() {
-    const memo = state.data.memos.find((m) => m.id === state.editingMemoId);
-    if (!memo) return;
-    const title = el.memoList.querySelector('.memo-title-input').value.trim();
-    const content = el.memoList.querySelector('.memo-content-input').value.trim();
-    if (!content) {
-      el.memoList.querySelector('.memo-content-input').focus();
-      return;
-    }
-    memo.title = title;
-    memo.content = content;
-    if (state.pendingNewMemoId === memo.id) state.pendingNewMemoId = null;
-    state.editingMemoId = null;
+  // ---- 备忘录（顶部固定输入区块，保存即新增） ----
+  // 读取顶部输入框内容保存为新备忘并清空输入框；内容为空则不保存
+  function saveNewMemo() {
+    const title = $('memo-new-title').value.trim();
+    const content = $('memo-new-content').value.trim();
+    if (!content) return;
+    state.data.memos.unshift({ id: uid('m_'), title, content, createdAt: Date.now() });
+    $('memo-new-title').value = '';
+    $('memo-new-content').value = '';
     renderMemo();
     save();
-  }
-
-  // 取消编辑：本次新增且未保存的直接移除，编辑已有备忘的放弃改动
-  function cancelEditingMemo() {
-    const memo = state.data.memos.find((m) => m.id === state.editingMemoId);
-    if (memo && state.pendingNewMemoId === memo.id) {
-      state.data.memos = state.data.memos.filter((m) => m.id !== memo.id);
-      state.pendingNewMemoId = null;
-    }
-    state.editingMemoId = null;
-    renderMemo();
   }
 
   // ---- 事件 ----
@@ -532,7 +436,7 @@
       state.groupFilter = e.target.value;
       renderTodo();
     });
-    $('add-memo-btn').addEventListener('click', startMemoCreate);
+    $('memo-save-btn').addEventListener('click', saveNewMemo);
 
     // 列表事件委托：待办/已办/统计近期待办共用一个处理
     [el.todoList, el.doneList, el.statDue].forEach((box) => {
@@ -547,6 +451,8 @@
         // 先刷新视图再落盘，操作结果立即可见
         if (act === 'done') { todo.done = true; todo.doneAt = Date.now(); renderAll(); save(); }
         else if (act === 'restore') { todo.done = false; todo.doneAt = null; renderAll(); save(); }
+        else if (act === 'up') { moveItem(state.data.todos, id, -1); renderAll(); save(); }
+        else if (act === 'down') { moveItem(state.data.todos, id, 1); renderAll(); save(); }
         else if (act === 'edit') { openTodoForm(todo); }
         else if (act === 'del') { confirmDelete(() => { state.data.todos = state.data.todos.filter((t) => t.id !== id); renderAll(); save(); }); }
       });
@@ -555,13 +461,12 @@
     el.memoList.addEventListener('click', (e) => {
       const actEl = e.target.closest('[data-act]');
       if (!actEl) return;
-      const act = actEl.dataset.act;
-      if (act === 'save-memo') { saveEditingMemo(); return; }
-      if (act === 'cancel-memo') { cancelEditingMemo(); return; }
       const item = e.target.closest('.memo-item');
       const memo = item && state.data.memos.find((m) => m.id === item.dataset.id);
       if (!memo) return;
-      if (act === 'edit') startMemoEdit(memo);
+      const act = actEl.dataset.act;
+      if (act === 'up') { moveItem(state.data.memos, memo.id, -1); renderMemo(); save(); }
+      else if (act === 'down') { moveItem(state.data.memos, memo.id, 1); renderMemo(); save(); }
       else if (act === 'del') confirmDelete(() => { state.data.memos = state.data.memos.filter((m) => m.id !== memo.id); renderMemo(); save(); });
     });
 
@@ -572,10 +477,6 @@
         save();
       });
     });
-
-    // 拖拽排序：待办列表与备忘录列表（排序结果持久化到 data.json）
-    bindDragSort(el.todoList, () => state.data.todos, () => save());
-    bindDragSort(el.memoList, () => state.data.memos, () => save());
 
     el.authBtn.addEventListener('click', authorizeAndStart);
   }
