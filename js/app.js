@@ -405,7 +405,25 @@
   }
 
   // ---- 备忘录（顶部固定输入区块，保存即新增） ----
-  // 读取顶部输入框内容保存为新备忘并清空输入框；内容为空则不保存
+  // 输入框草稿：未保存的文字存 localStorage，刷新/重开页面后回填
+  const MEMO_DRAFT_KEY = 'memo_draft';
+
+  function saveMemoDraft() {
+    localStorage.setItem(MEMO_DRAFT_KEY, JSON.stringify({
+      title: $('memo-new-title').value,
+      content: $('memo-new-content').value,
+    }));
+  }
+
+  function loadMemoDraft() {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem(MEMO_DRAFT_KEY)); } catch (e) { /* 草稿损坏则忽略 */ }
+    if (!draft || typeof draft !== 'object') return;
+    $('memo-new-title').value = draft.title || '';
+    $('memo-new-content').value = draft.content || '';
+  }
+
+  // 读取顶部输入框内容保存为新备忘并清空输入框及草稿；内容为空则不保存
   function saveNewMemo() {
     const title = $('memo-new-title').value.trim();
     const content = $('memo-new-content').value.trim();
@@ -413,6 +431,7 @@
     state.data.memos.unshift({ id: uid('m_'), title, content, createdAt: Date.now() });
     $('memo-new-title').value = '';
     $('memo-new-content').value = '';
+    localStorage.removeItem(MEMO_DRAFT_KEY);
     renderMemo();
     save();
   }
@@ -437,6 +456,9 @@
       renderTodo();
     });
     $('memo-save-btn').addEventListener('click', saveNewMemo);
+    // 输入即存草稿，刷新后回填
+    $('memo-new-title').addEventListener('input', saveMemoDraft);
+    $('memo-new-content').addEventListener('input', saveMemoDraft);
 
     // 列表事件委托：待办/已办/统计近期待办共用一个处理
     [el.todoList, el.doneList, el.statDue].forEach((box) => {
@@ -499,6 +521,7 @@
 
   async function init() {
     initEvents();
+    loadMemoDraft();
     if (!DB.supported()) {
       el.authMsg.textContent = '当前浏览器不支持本地文件读写，请使用 Chrome 或 Edge 浏览器打开本页面。';
       el.authMask.classList.remove('hidden');
