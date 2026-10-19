@@ -34,13 +34,11 @@
     statTodoNum: $('stat-todo-num'),
     statTotalNum: $('stat-total-num'),
     statGroups: $('stat-groups'),
-    statDue: $('stat-due'),
     trendChart: $('trend-chart'),
   };
 
   // ---- 工具函数 ----
-  // 优先级：普通(蓝)/紧急(红)；旧数据 high 视为紧急，medium/low 视为普通
-  const PRIORITY_ORDER = { urgent: 0, high: 0, normal: 1, medium: 1, low: 1 };
+  // 优先级标签：普通(蓝)/紧急(红)；旧数据 high 视为紧急，medium/low 视为普通
   function priorityInfo(priority) {
     if (priority === 'urgent' || priority === 'high') return { text: '紧急', cls: 'tag-urgent' };
     return { text: '普通', cls: 'tag-normal' };
@@ -91,15 +89,6 @@
 
   function getGroup(id) {
     return state.data.groups.find((g) => g.id === id) || state.data.groups[0];
-  }
-
-  // 待办排序：优先级高→低，同优先级按创建时间
-  function sortByPriority(list) {
-    return [...list].sort((a, b) => {
-      const pa = PRIORITY_ORDER[a.priority] != null ? PRIORITY_ORDER[a.priority] : 1;
-      const pb = PRIORITY_ORDER[b.priority] != null ? PRIORITY_ORDER[b.priority] : 1;
-      return pa !== pb ? pa - pb : a.createdAt - b.createdAt;
-    });
   }
 
   // ---- 待办条目渲染 ----
@@ -208,8 +197,7 @@
     el.statTodoNum.textContent = remain;
     el.statTotalNum.textContent = addedToday;
 
-    // 按项目统计（今日）
-    const today = todayStr();
+    // 按项目统计今日完成与剩余待办
     const groupStats = state.data.groups.map((g) => {
       const gTodos = todos.filter((t) => t.groupId === g.id);
       return {
@@ -224,15 +212,6 @@
         <div class="stat-group-row">今日完成 <b style="color:var(--success)">${s.done}</b></div>
         <div class="stat-group-row">剩余待办 <b>${s.remain}</b></div>
       </div>`).join('');
-
-    // 近期待办（3 天内或已逾期）
-    const near = sortByPriority(todos.filter((t) => {
-      if (t.done || !t.dueDate) return false;
-      return t.dueDate <= addDaysStr(today, 3);
-    }));
-    el.statDue.innerHTML = near.length
-      ? near.map((t) => todoItemHtml(t, false)).join('')
-      : '<div class="empty-tip">近期没有临期或逾期的事项</div>';
 
     renderTrendChart(todos);
   }
@@ -261,7 +240,10 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+        },
         plugins: { legend: { display: false } },
       },
     });
@@ -464,8 +446,8 @@
       saveScratch();
     });
 
-    // 列表事件委托：待办/已办/统计近期待办共用一个处理
-    [el.todoList, el.doneList, el.statDue].forEach((box) => {
+    // 列表事件委托：待办/已办共用一个处理
+    [el.todoList, el.doneList].forEach((box) => {
       box.addEventListener('click', (e) => {
         const item = e.target.closest('.todo-item');
         if (!item) return;
