@@ -161,12 +161,26 @@
       : '<div class="empty-tip">暂无待办，点击右上角"新建待办"开始记录</div>';
   }
 
+  // 已办：按完成日期分组渲染，同一天完成的事项归为一组，日期由近及远
   function renderDone() {
     const list = state.data.todos.filter((t) => t.done)
       .sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-    el.doneList.innerHTML = list.length
-      ? list.map((t) => todoItemHtml(t, true)).join('')
-      : '<div class="empty-tip">还没有完成的事项</div>';
+    if (!list.length) {
+      el.doneList.innerHTML = '<div class="empty-tip">还没有完成的事项</div>';
+      return;
+    }
+    const groups = [];
+    list.forEach((t) => {
+      const day = dateOf(t.doneAt);
+      const last = groups[groups.length - 1];
+      if (last && last.day === day) last.items.push(t);
+      else groups.push({ day, items: [t] });
+    });
+    el.doneList.innerHTML = groups.map((g) => `
+      <div class="done-group">
+        <div class="done-group-title">${g.day}</div>
+        ${g.items.map((t) => todoItemHtml(t, true)).join('')}
+      </div>`).join('');
   }
 
   // 备忘条目：只读文本区块（标题+内容），支持上移/下移/删除

@@ -147,7 +147,12 @@ body {
 }
 .todo-item:hover { box-shadow: 0 4px 12px rgba(47, 111, 237, .08); }
 .todo-item.done-item { opacity: .75; }
-.todo-item.done-item .todo-title { text-decoration: line-through; color: var(--text-sub); }
+.todo-item.done-item .todo-title { color: var(--text-sub); }
+
+/* 已办分组：同一完成日期的条目归为一组，组间留白 */
+.done-group { display: flex; flex-direction: column; gap: 10px; }
+.done-group + .done-group { margin-top: 10px; }
+.done-group-title { font-size: 13px; font-weight: 600; color: var(--text-sub); padding: 2px; }
 
 .todo-check {
   width: 22px; height: 22px; flex-shrink: 0;
