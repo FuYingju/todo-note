@@ -25,14 +25,14 @@ body {
   overflow: hidden;
 }
 
-/* ---- 整体布局：左侧便签栏 + 右侧主内容 ---- */
-.app-layout { display: flex; height: 100vh; }
-.app-shell { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+/* ---- 整体布局：顶栏横跨全宽，其下左侧便签 + 右侧主内容 ---- */
+.app-layout { display: flex; flex-direction: column; height: 100vh; }
+.app-body { flex: 1; display: flex; min-height: 0; }
+.app-shell { flex: 1; min-width: 0; overflow-y: auto; }
 
-/* ---- 左侧便签：全高铺满，黄底，输入自动保存 ---- */
+/* ---- 左侧便签：沿顶栏下方铺满高度，黄底，输入自动保存 ---- */
 .scratch-pad {
   width: 240px; flex-shrink: 0;
-  height: 100vh;
   background: #fff9c4;
   border-right: 1px solid #ece19a;
   display: flex;
@@ -56,9 +56,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-icon {
