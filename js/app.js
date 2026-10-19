@@ -12,6 +12,8 @@
     view: 'todo',
     groupFilter: 'all',
     trendChart: null,
+    priorityChart: null,
+    weekChart: null,
   };
 
   // ---- DOM ----
@@ -34,6 +36,9 @@
     statTodoNum: $('stat-todo-num'),
     statTotalNum: $('stat-total-num'),
     statGroups: $('stat-groups'),
+    priorityChart: $('priority-chart'),
+    weekChart: $('week-chart'),
+    weekDiff: $('week-diff'),
     trendChart: $('trend-chart'),
   };
 
@@ -213,7 +218,81 @@
         <div class="stat-group-row">剩余待办 <b>${s.remain}</b></div>
       </div>`).join('');
 
+    renderPriorityDist(todos);
+    renderWeekSummary(todos);
     renderTrendChart(todos);
+  }
+
+  // 优先级分布：未完成待办里紧急/普通的占比（环形图）
+  function renderPriorityDist(todos) {
+    const pending = todos.filter((t) => !t.done);
+    const urgent = pending.filter((t) => t.priority === 'urgent' || t.priority === 'high').length;
+    const normal = pending.length - urgent;
+    if (state.priorityChart) { state.priorityChart.destroy(); state.priorityChart = null; }
+    state.priorityChart = new Chart(el.priorityChart, {
+      type: 'doughnut',
+      data: {
+        labels: [`紧急 ${urgent}`, `普通 ${normal}`],
+        datasets: [{
+          data: [urgent, normal],
+          backgroundColor: ['#e5484d', '#2f6fed'],
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } } },
+      },
+    });
+  }
+
+  // 本周小结：本周完成/新增数量对比柱状图，下方显示与上周的环比（周一为一周起点）
+  function renderWeekSummary(todos) {
+    const mondayTs = (weekOffset) => {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + weekOffset * 7);
+      return d.getTime();
+    };
+    const thisMon = mondayTs(0);
+    const lastMon = mondayTs(-1);
+    const nextMon = mondayTs(1);
+    const doneThis = todos.filter((t) => t.done && t.doneAt >= thisMon && t.doneAt < nextMon).length;
+    const doneLast = todos.filter((t) => t.done && t.doneAt >= lastMon && t.doneAt < thisMon).length;
+    const addedThis = todos.filter((t) => t.createdAt >= thisMon && t.createdAt < nextMon).length;
+    const addedLast = todos.filter((t) => t.createdAt >= lastMon && t.createdAt < thisMon).length;
+
+    if (state.weekChart) { state.weekChart.destroy(); state.weekChart = null; }
+    state.weekChart = new Chart(el.weekChart, {
+      type: 'bar',
+      data: {
+        labels: ['本周完成', '本周新增'],
+        datasets: [{
+          data: [doneThis, addedThis],
+          backgroundColor: ['#2ecc71', '#f5a623'],
+          borderRadius: 4,
+          maxBarThickness: 48,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } },
+        },
+      },
+    });
+
+    const diffSpan = (cur, prev) => {
+      const d = cur - prev;
+      if (d === 0) return '<span>持平</span>';
+      return `<span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '↑' : '↓'}${Math.abs(d)}</span>`;
+    };
+    el.weekDiff.innerHTML = `较上周：完成 ${diffSpan(doneThis, doneLast)}　新增 ${diffSpan(addedThis, addedLast)}`;
   }
 
   function renderTrendChart(todos) {

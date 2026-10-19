@@ -2,7 +2,7 @@
  * Service Worker：离线缓存静态资源。
  * 数据文件 data.json 由 File System Access API 直接读写本地目录，不经过网络缓存。
  */
-const CACHE = 'todo-note-v6';
+const CACHE = 'todo-note-v9';
 const ASSETS = [
   './',
   './index.html',

@@ -71,7 +71,7 @@
         <!-- 统计视图 -->
         <section id="view-stats" class="view">
           <div class="stats-cards">
-            <div class="stat-card">
+            <div class="stat-card success">
               <div class="stat-num" id="stat-done-num">-</div>
               <div class="stat-label">今日已完成</div>
             </div>
@@ -79,13 +79,24 @@
               <div class="stat-num" id="stat-todo-num">-</div>
               <div class="stat-label">今日未完成</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card warn">
               <div class="stat-num" id="stat-total-num">-</div>
               <div class="stat-label">今日新增</div>
             </div>
           </div>
           <h3 class="stat-title">今日完成</h3>
           <div id="stat-groups" class="stat-groups"></div>
+          <div class="stat-charts-row">
+            <div class="stat-chart-col">
+              <h3 class="stat-title">优先级分布</h3>
+              <div class="chart-wrap compact"><canvas id="priority-chart"></canvas></div>
+            </div>
+            <div class="stat-chart-col">
+              <h3 class="stat-title">本周小结</h3>
+              <div class="chart-wrap compact"><canvas id="week-chart"></canvas></div>
+              <div id="week-diff" class="chart-legend"></div>
+            </div>
+          </div>
           <h3 class="stat-title">近 14 天完成趋势</h3>
           <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
         </section>
