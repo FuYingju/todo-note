@@ -21,8 +21,31 @@ body {
   font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
+
+/* ---- 整体布局：左侧便签栏 + 右侧主内容 ---- */
+.app-layout { display: flex; height: 100vh; }
+.app-shell { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+
+/* ---- 左侧便签：全高铺满，黄底，输入自动保存 ---- */
+.scratch-pad {
+  width: 240px; flex-shrink: 0;
+  height: 100vh;
+  background: #fff9c4;
+  border-right: 1px solid #ece19a;
+  display: flex;
+}
+.scratch-pad-input {
+  flex: 1; width: 100%;
+  border: none; outline: none; resize: none;
+  background: transparent;
+  padding: 18px 16px;
+  font-family: inherit; font-size: 14px; line-height: 1.9;
+  color: #5a5113;
+}
+.scratch-pad-input::placeholder { color: #bfb471; }
 
 /* ---- 顶栏 ---- */
 .app-header {

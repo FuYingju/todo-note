@@ -10,81 +10,90 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <span class="brand-icon"></span>
-      <span class="brand-name">工作待办记事本</span>
+  <div class="app-layout">
+    <!-- 左侧便签：全高，无需保存，输入自动落盘 -->
+    <aside class="scratch-pad">
+      <textarea id="scratch-pad-input" class="scratch-pad-input" placeholder="随手记点什么，自动保存" spellcheck="false"></textarea>
+    </aside>
+
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-icon"></span>
+          <span class="brand-name">工作待办记事本</span>
+        </div>
+        <nav class="tabs">
+          <button class="tab active" data-view="todo">待办</button>
+          <button class="tab" data-view="done">已办</button>
+          <button class="tab" data-view="memo">备忘录</button>
+          <button class="tab" data-view="stats">统计</button>
+        </nav>
+      </header>
+
+      <main class="app-main">
+        <!-- 待办视图 -->
+        <section id="view-todo" class="view active">
+          <div class="view-toolbar">
+            <select id="group-filter" class="select"></select>
+            <div class="toolbar-right">
+              <button id="manage-groups-btn" class="btn ghost">分组管理</button>
+              <button id="add-todo-btn" class="btn primary">+ 新建待办</button>
+            </div>
+          </div>
+          <div id="todo-summary" class="summary-bar"></div>
+          <div id="todo-list" class="todo-list"></div>
+        </section>
+
+        <!-- 已办视图 -->
+        <section id="view-done" class="view">
+          <div class="view-toolbar">
+            <h2 class="view-title">已办事项</h2>
+            <button id="clear-done-btn" class="btn ghost danger">清空已办</button>
+          </div>
+          <div id="done-list" class="todo-list"></div>
+        </section>
+
+        <!-- 备忘录视图 -->
+        <section id="view-memo" class="view">
+          <div class="view-toolbar">
+            <h2 class="view-title">备忘录</h2>
+          </div>
+          <div class="memo-compose">
+            <input id="memo-new-title" class="memo-title-input" placeholder="备忘标题">
+            <textarea id="memo-new-content" class="memo-content-input" placeholder="备忘内容"></textarea>
+            <div class="memo-compose-actions">
+              <button id="memo-save-btn" class="btn primary">保存</button>
+            </div>
+          </div>
+          <div id="memo-list" class="memo-list"></div>
+        </section>
+
+        <!-- 统计视图 -->
+        <section id="view-stats" class="view">
+          <div class="stats-cards">
+            <div class="stat-card">
+              <div class="stat-num" id="stat-done-num">-</div>
+              <div class="stat-label">今日已完成</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-todo-num">-</div>
+              <div class="stat-label">今日未完成</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-total-num">-</div>
+              <div class="stat-label">今日新增</div>
+            </div>
+          </div>
+          <h3 class="stat-title">今日按项目统计</h3>
+          <div id="stat-groups" class="stat-groups"></div>
+          <h3 class="stat-title">近期待办（3 天内或已逾期）</h3>
+          <div id="stat-due" class="todo-list"></div>
+          <h3 class="stat-title">近 14 天完成趋势</h3>
+          <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+        </section>
+      </main>
     </div>
-    <nav class="tabs">
-      <button class="tab active" data-view="todo">待办</button>
-      <button class="tab" data-view="done">已办</button>
-      <button class="tab" data-view="memo">备忘录</button>
-      <button class="tab" data-view="stats">统计</button>
-    </nav>
-  </header>
-
-  <main class="app-main">
-    <!-- 待办视图 -->
-    <section id="view-todo" class="view active">
-      <div class="view-toolbar">
-        <select id="group-filter" class="select"></select>
-        <div class="toolbar-right">
-          <button id="manage-groups-btn" class="btn ghost">分组管理</button>
-          <button id="add-todo-btn" class="btn primary">+ 新建待办</button>
-        </div>
-      </div>
-      <div id="todo-summary" class="summary-bar"></div>
-      <div id="todo-list" class="todo-list"></div>
-    </section>
-
-    <!-- 已办视图 -->
-    <section id="view-done" class="view">
-      <div class="view-toolbar">
-        <h2 class="view-title">已办事项</h2>
-        <button id="clear-done-btn" class="btn ghost danger">清空已办</button>
-      </div>
-      <div id="done-list" class="todo-list"></div>
-    </section>
-
-    <!-- 备忘录视图 -->
-    <section id="view-memo" class="view">
-      <div class="view-toolbar">
-        <h2 class="view-title">备忘录</h2>
-      </div>
-      <div class="memo-compose">
-        <input id="memo-new-title" class="memo-title-input" placeholder="备忘标题">
-        <textarea id="memo-new-content" class="memo-content-input" placeholder="备忘内容"></textarea>
-        <div class="memo-compose-actions">
-          <button id="memo-save-btn" class="btn primary">保存</button>
-        </div>
-      </div>
-      <div id="memo-list" class="memo-list"></div>
-    </section>
-
-    <!-- 统计视图 -->
-    <section id="view-stats" class="view">
-      <div class="stats-cards">
-        <div class="stat-card">
-          <div class="stat-num" id="stat-done-num">-</div>
-          <div class="stat-label">今日已完成</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-todo-num">-</div>
-          <div class="stat-label">今日未完成</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total-num">-</div>
-          <div class="stat-label">今日新增</div>
-        </div>
-      </div>
-      <h3 class="stat-title">今日按项目统计</h3>
-      <div id="stat-groups" class="stat-groups"></div>
-      <h3 class="stat-title">近期待办（3 天内或已逾期）</h3>
-      <div id="stat-due" class="todo-list"></div>
-      <h3 class="stat-title">近 14 天完成趋势</h3>
-      <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
-    </section>
-  </main>
+  </div>
 
   <!-- 授权/加载遮罩 -->
   <div id="auth-mask" class="auth-mask hidden">

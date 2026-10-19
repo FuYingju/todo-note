@@ -405,27 +405,7 @@
   }
 
   // ---- 备忘录（顶部固定输入区块，保存即新增） ----
-  // 输入框草稿：未保存的文字存 localStorage，刷新/重开页面后回填
-  const MEMO_DRAFT_KEY = 'memo_draft';
-
-  function saveMemoDraft() {
-    try {
-      localStorage.setItem(MEMO_DRAFT_KEY, JSON.stringify({
-        title: $('memo-new-title').value,
-        content: $('memo-new-content').value,
-      }));
-    } catch (e) { /* 存储不可用时忽略草稿 */ }
-  }
-
-  function loadMemoDraft() {
-    let draft = null;
-    try { draft = JSON.parse(localStorage.getItem(MEMO_DRAFT_KEY)); } catch (e) { /* 草稿损坏则忽略 */ }
-    if (!draft || typeof draft !== 'object') return;
-    $('memo-new-title').value = draft.title || '';
-    $('memo-new-content').value = draft.content || '';
-  }
-
-  // 读取顶部输入框内容追加到备忘录列表末尾（重要的备忘保留在上方，新备忘排最后）并清空输入框及草稿；内容为空则不保存
+  // 读取顶部输入框内容追加到备忘录列表末尾（重要的备忘保留在上方，新备忘排最后）并清空输入框；内容为空则不保存
   function saveNewMemo() {
     const title = $('memo-new-title').value.trim();
     const content = $('memo-new-content').value.trim();
@@ -433,9 +413,28 @@
     state.data.memos.push({ id: uid('m_'), title, content, createdAt: Date.now() });
     $('memo-new-title').value = '';
     $('memo-new-content').value = '';
-    localStorage.removeItem(MEMO_DRAFT_KEY);
     renderMemo();
     save();
+  }
+
+  // ---- 左侧便签（全高，输入自动保存到 data.json 的 scratch 字段） ----
+  let scratchTimer = null;
+
+  // 把便签内容写入数据并落盘
+  function saveScratch() {
+    state.data.scratch = $('scratch-pad-input').value;
+    save();
+  }
+
+  // 输入时防抖落盘，避免每次按键都写文件
+  function scheduleSaveScratch() {
+    clearTimeout(scratchTimer);
+    scratchTimer = setTimeout(saveScratch, 400);
+  }
+
+  // 数据加载完成后回填便签内容
+  function loadScratch() {
+    $('scratch-pad-input').value = state.data.scratch || '';
   }
 
   // ---- 事件 ----
@@ -458,9 +457,12 @@
       renderTodo();
     });
     $('memo-save-btn').addEventListener('click', saveNewMemo);
-    // 输入即存草稿，刷新后回填
-    $('memo-new-title').addEventListener('input', saveMemoDraft);
-    $('memo-new-content').addEventListener('input', saveMemoDraft);
+    // 便签：输入即自动保存（防抖），失焦立即保存
+    $('scratch-pad-input').addEventListener('input', scheduleSaveScratch);
+    $('scratch-pad-input').addEventListener('blur', () => {
+      clearTimeout(scratchTimer);
+      saveScratch();
+    });
 
     // 列表事件委托：待办/已办/统计近期待办共用一个处理
     [el.todoList, el.doneList, el.statDue].forEach((box) => {
@@ -516,6 +518,7 @@
       state.data = await DB.readData();
       el.authMask.classList.add('hidden');
       renderAll();
+      loadScratch();
     } catch (err) {
       el.authMsg.textContent = '未授权数据目录或读取失败，点击下方按钮重新选择（建议在浏览器弹窗中从"最近使用的文件夹"选择上次的目录）。';
     }
@@ -523,7 +526,6 @@
 
   async function init() {
     initEvents();
-    loadMemoDraft();
     if (!DB.supported()) {
       el.authMsg.textContent = '当前浏览器不支持本地文件读写，请使用 Chrome 或 Edge 浏览器打开本页面。';
       el.authMask.classList.remove('hidden');
@@ -536,6 +538,7 @@
         state.data = await DB.readWith(dir);
         el.authMask.classList.add('hidden');
         renderAll();
+        loadScratch();
         return;
       } catch (err) { /* 读取失败则转入授权流程 */ }
     }

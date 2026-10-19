@@ -10,13 +10,14 @@ window.DB = (() => {
   const HANDLE_DB = 'todo_note_handles';
   const HANDLE_KEY = 'dirHandle';
 
-  // 默认数据：内置"默认分组"，未分组的待办归入该组
+  // 默认数据：内置"默认分组"，未分组的待办归入该组；scratch 为左侧便签内容
   function defaultData() {
     return {
       version: 1,
       groups: [{ id: 'g_default', name: '默认分组', builtin: true }],
       todos: [],
       memos: [],
+      scratch: '',
     };
   }
 
