@@ -377,6 +377,14 @@
   }
 
   // ---- 待办表单 ----
+  // 新建待办时的默认所属项目：优先当前筛选的分组，其次上次新增时选用的分组，最后回退到第一个分组
+  function defaultGroupId() {
+    if (state.groupFilter !== 'all') return state.groupFilter;
+    const last = state.data.lastGroupId;
+    if (last && state.data.groups.some((g) => g.id === last)) return last;
+    return state.data.groups[0].id;
+  }
+
   function openTodoForm(todo) {
     const isEdit = !!todo;
     const groupOptions = state.data.groups
@@ -410,6 +418,7 @@
           Object.assign(todo, payload);
         } else {
           state.data.todos.push({ id: uid('t_'), done: false, createdAt: Date.now(), doneAt: null, ...payload });
+          state.data.lastGroupId = payload.groupId;
         }
         // 先刷新视图再落盘：新增/修改立即可见，不依赖写盘完成
         renderAll();
@@ -420,6 +429,8 @@
     if (todo) {
       $('f-priority').value = (todo.priority === 'urgent' || todo.priority === 'high') ? 'urgent' : 'normal';
       $('f-group').value = todo.groupId || state.data.groups[0].id;
+    } else {
+      $('f-group').value = defaultGroupId();
     }
   }
 

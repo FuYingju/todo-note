@@ -18,6 +18,7 @@ window.DB = (() => {
       todos: [],
       memos: [],
       scratch: '',
+      lastGroupId: '',
     };
   }
 
