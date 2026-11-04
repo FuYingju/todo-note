@@ -1,6 +1,6 @@
 {
-  "name": "工作待办记事本",
-  "short_name": "待办记事本",
+  "name": "万能记事本",
+  "short_name": "万能记事本",
   "description": "本地化的待办、已办、备忘录与统计工具",
   "start_url": "./index.html",
   "scope": "./",
