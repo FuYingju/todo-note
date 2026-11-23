@@ -524,7 +524,11 @@
   }
 
   // ---- 事件 ----
+  // 事件只在数据就绪后绑定一次
+  let eventsBound = false;
   function initEvents() {
+    if (eventsBound) return;
+    eventsBound = true;
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
@@ -589,8 +593,6 @@
         save();
       });
     });
-
-    el.authBtn.addEventListener('click', authorizeAndStart);
   }
 
   function confirmDelete(onOk) {
@@ -603,6 +605,7 @@
     try {
       state.data = await DB.readData();
       el.authMask.classList.add('hidden');
+      initEvents();
       renderAll();
       loadScratch();
     } catch (err) {
@@ -611,23 +614,25 @@
   }
 
   async function init() {
-    initEvents();
+    el.authBtn.addEventListener('click', authorizeAndStart);
     if (!DB.supported()) {
       el.authMsg.textContent = '当前浏览器不支持本地文件读写，请使用 Chrome 或 Edge 浏览器打开本页面。';
       el.authMask.classList.remove('hidden');
       return;
     }
     // 首次打开静默恢复上次授权的目录句柄；未授权过则停在遮罩等待用户点击
-    const dir = await DB.restoreHandle();
-    if (dir) {
-      try {
+    let dir = null;
+    try {
+      dir = await DB.restoreHandle();
+      if (dir) {
         state.data = await DB.readWith(dir);
         el.authMask.classList.add('hidden');
+        initEvents();
         renderAll();
         loadScratch();
         return;
-      } catch (err) { /* 读取失败则转入授权流程 */ }
-    }
+      }
+    } catch (err) { /* 恢复句柄或读取失败：转入授权流程 */ }
     el.authMask.classList.remove('hidden');
   }
 
