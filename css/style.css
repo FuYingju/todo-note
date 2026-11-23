@@ -77,6 +77,19 @@ body {
   box-shadow: 0 6px 0 #c8d5f0, 0 12px 0 #c8d5f0;
 }
 .brand-name { font-size: 17px; font-weight: 600; }
+.data-dir {
+  margin-left: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #f7f9fd;
+  font-size: 12px;
+  color: var(--text-sub);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .tabs { display: flex; gap: 4px; }
 .tab {

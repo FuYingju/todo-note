@@ -22,6 +22,7 @@
     authMask: $('auth-mask'),
     authMsg: $('auth-msg'),
     authBtn: $('auth-btn'),
+    dataDir: $('data-dir'),
     modal: $('modal'),
     modalTitle: $('modal-title'),
     modalBody: $('modal-body'),
@@ -523,6 +524,13 @@
     $('scratch-pad-input').value = state.data.scratch || '';
   }
 
+  // 顶栏展示当前绑定的文件夹名称，便于确认数据来自哪个目录
+  function renderDataDir() {
+    const name = DB.dirName();
+    el.dataDir.textContent = name ? `目录：${name}` : '';
+    el.dataDir.hidden = !name;
+  }
+
   // ---- 事件 ----
   // 事件只在数据就绪后绑定一次
   let eventsBound = false;
@@ -606,6 +614,7 @@
       state.data = await DB.readData();
       el.authMask.classList.add('hidden');
       initEvents();
+      renderDataDir();
       renderAll();
       loadScratch();
     } catch (err) {
@@ -628,6 +637,7 @@
         state.data = await DB.readWith(dir);
         el.authMask.classList.add('hidden');
         initEvents();
+        renderDataDir();
         renderAll();
         loadScratch();
         return;

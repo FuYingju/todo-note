@@ -10,6 +10,9 @@ window.DB = (() => {
   const HANDLE_DB = 'todo_note_handles';
   const HANDLE_KEY = 'dirHandle';
 
+  // 当前已授权的目录句柄名称，供界面展示当前绑定的是哪个文件夹
+  let currentDirName = '';
+
   // 默认数据：内置"默认分组"，未分组的待办归入该组；scratch 为左侧便签内容
   function defaultData() {
     return {
@@ -60,10 +63,14 @@ window.DB = (() => {
       if (perm !== 'granted') {
         perm = await dir.requestPermission({ mode: 'readwrite' });
       }
-      if (perm === 'granted') return dir;
+      if (perm === 'granted') {
+        currentDirName = dir.name;
+        return dir;
+      }
     }
     dir = await window.showDirectoryPicker({ mode: 'readwrite' });
     await saveHandle(dir);
+    currentDirName = dir.name;
     return dir;
   }
 
@@ -77,7 +84,14 @@ window.DB = (() => {
     const dir = await loadHandle();
     if (!dir) return null;
     const perm = await dir.queryPermission({ mode: 'readwrite' });
-    return perm === 'granted' ? dir : null;
+    if (perm !== 'granted') return null;
+    currentDirName = dir.name;
+    return dir;
+  }
+
+  // 当前绑定的文件夹名称
+  function dirName() {
+    return currentDirName;
   }
 
   // 读取数据；目录无 data.json 时返回默认结构
@@ -106,5 +120,5 @@ window.DB = (() => {
     await writable.close();
   }
 
-  return { supported, authorize, restoreHandle, readData, readWith, writeData, writeWith, defaultData };
+  return { supported, authorize, restoreHandle, dirName, readData, readWith, writeData, writeWith, defaultData };
 })();
